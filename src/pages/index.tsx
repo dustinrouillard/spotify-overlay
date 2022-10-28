@@ -55,7 +55,8 @@ export default function Home() {
             </ProgressContainer>
 
             <DeviceInfo>
-              {song.type == "Smartphone" ? "📱" : "💻"} {song.name}
+              {song.device.type == "Smartphone" ? "📱" : "💻"}{" "}
+              {song.device.name}
             </DeviceInfo>
           </TrackInfo>
         </>
