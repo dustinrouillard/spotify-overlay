@@ -3,25 +3,29 @@ import { useState, useEffect } from "react";
 import styled from "styled-components";
 import Head from "next/head";
 
-import { InternalPlayerResponse } from "../types/gateway";
+import { SpotifyPlayingData } from "../types/gateway";
 import { gateway } from "../utils/gateway";
 import { millisToMinutesAndSeconds } from "../utils/functions";
 
 export default function Home() {
-  const [song, setSong] = useState<InternalPlayerResponse>({ is_playing: false });
+  const [song, setSong] = useState<Partial<SpotifyPlayingData>>({
+    playing: false,
+  });
 
   useEffect(() => {
-    const listener = (data: InternalPlayerResponse) => {
-      setSong(state => { return { ...state, ...data }; });
-    }
+    const listener = (data: SpotifyPlayingData) => {
+      setSong((state) => {
+        return { ...state, ...data };
+      });
+    };
 
-    gateway.on('spotify', listener);
-    gateway.on('spotify_changed', listener);
+    gateway.on("spotify", listener);
+    gateway.on("spotify_changed", listener);
 
     return () => {
-      gateway.removeListener('spotify', listener);
-      gateway.removeListener('spotify_changed', listener);
-    }
+      gateway.removeListener("spotify", listener);
+      gateway.removeListener("spotify_changed", listener);
+    };
   }, []);
 
   return (
@@ -31,22 +35,27 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      {!!song.is_playing && (
+      {!!song.playing && (
         <>
-          <Cover playing height="100" src={song.item_image} />
+          <Cover playing height="100" src={song.image} />
           <TrackInfo>
-            <TrackTitle>{song.item_name}</TrackTitle>
-            <TrackArtist>{song.item_author}</TrackArtist>
+            <TrackTitle>{song.name}</TrackTitle>
+            <TrackArtist>
+              {song.artists.map(({ name }) => name).join(", ")}
+            </TrackArtist>
 
             <ProgressContainer>
-              <Timer>{millisToMinutesAndSeconds(song.item_progress)} : {millisToMinutesAndSeconds(song.item_length_ms)}</Timer>
+              <Timer>
+                {millisToMinutesAndSeconds(song.progress)} :{" "}
+                {millisToMinutesAndSeconds(song.length)}
+              </Timer>
               <Progress>
-                <ProgressBar progress={(song.item_progress / song.item_length_ms) * 100} />
+                <ProgressBar progress={(song.progress / song.length) * 100} />
               </Progress>
             </ProgressContainer>
 
             <DeviceInfo>
-              {song.device_type == 'Smartphone' ? '📱' : '💻'} {song.device_name}
+              {song.type == "Smartphone" ? "📱" : "💻"} {song.name}
             </DeviceInfo>
           </TrackInfo>
         </>
@@ -56,10 +65,14 @@ export default function Home() {
 }
 
 const Cover = styled.img`
-  visibility: ${(props: { playing?: boolean }) => !props.playing ? 'hidden' : 'visible'};
-  width: ${(props: { playing?: boolean }) => !props.playing ? '0px' : '100px'};
-  height: ${(props: { playing?: boolean }) => !props.playing ? '0px' : '100px'};
-  margin-right: ${(props: { playing?: boolean }) => !props.playing ? '0px' : '10px'};
+  visibility: ${(props: { playing?: boolean }) =>
+    !props.playing ? "hidden" : "visible"};
+  width: ${(props: { playing?: boolean }) =>
+    !props.playing ? "0px" : "100px"};
+  height: ${(props: { playing?: boolean }) =>
+    !props.playing ? "0px" : "100px"};
+  margin-right: ${(props: { playing?: boolean }) =>
+    !props.playing ? "0px" : "10px"};
 
   background-size: auto;
   padding: 5px;
@@ -101,7 +114,8 @@ const ProgressBar = styled.div`
   border-radius: 10px;
   background-color: lightblue;
   color: black;
-  width:  ${(props: { progress: number }) => props.progress ? `${props.progress}%` : '0%'};
+  width: ${(props: { progress: number }) =>
+    props.progress ? `${props.progress}%` : "0%"};
   transition: width 1000ms linear;
 `;
 
